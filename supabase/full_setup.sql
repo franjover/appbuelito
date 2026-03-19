@@ -1,7 +1,7 @@
 -- =============================================
 -- Appbuelito - FULL DATABASE SETUP
 -- Run this ONCE in Supabase SQL Editor
--- Project: elcbtkmcwoitsmqeztdd
+-- Run in your Supabase project's SQL Editor
 -- =============================================
 
 -- =============================================

@@ -46,3 +46,7 @@ app.*.map.json
 
 # Supabase credentials (injected via --dart-define for Flutter, config.js for web)
 web-portal/config.js
+
+# MCP config (contains API tokens)
+.mcp.json
+.netlify/

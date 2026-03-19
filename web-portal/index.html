@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Appbuelito - Portal Familiar</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="screen">
+    <div class="login-container">
+      <div class="logo">❤️</div>
+      <h1>Appbuelito</h1>
+      <p class="subtitle">Portal familiar</p>
+      <p class="description">Introduce el codigo de acceso que te ha dado tu familiar para ver sus datos de salud.</p>
+      <div class="code-input-group">
+        <input type="text" id="access-code" placeholder="ABC-XYZ" maxlength="7" autocomplete="off" autofocus>
+        <button id="login-btn" onclick="validateCode()">Entrar</button>
+      </div>
+      <p id="login-error" class="error" style="display:none;"></p>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div id="dashboard-screen" class="screen" style="display:none;">
+    <header>
+      <div class="header-content">
+        <div>
+          <h1 id="patient-name">Paciente</h1>
+          <p id="patient-diagnosis" class="subtitle">EPOC</p>
+        </div>
+        <div class="header-actions">
+          <button class="header-btn" onclick="refreshData()" title="Actualizar datos">🔄</button>
+          <button class="header-btn" onclick="downloadReport()" title="Descargar informe">📄</button>
+          <button class="logout-btn" onclick="logout()">Salir</button>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <!-- Freshness banner -->
+      <div id="freshness-banner" class="freshness-banner" style="display:none;">
+        <span>⚠️ Los datos pueden no estar actualizados. Ultima sincronizacion del dispositivo: <span id="freshness-time"></span></span>
+      </div>
+
+      <!-- Last sync -->
+      <p id="last-sync" class="sync-info"></p>
+
+      <!-- Summary cards -->
+      <div class="cards-grid">
+        <div class="card summary-card">
+          <h2>Ultimos 7 dias</h2>
+          <div class="day-summary" id="day-summary">
+            <div class="day-badge green"><span id="green-count">0</span> <small>buenos</small></div>
+            <div class="day-badge yellow"><span id="yellow-count">0</span> <small>regulares</small></div>
+            <div class="day-badge red"><span id="red-count">0</span> <small>malos</small></div>
+          </div>
+        </div>
+
+        <div class="card" id="today-card">
+          <h2>Ultimo dia registrado</h2>
+          <div id="today-info"><p>Cargando...</p></div>
+        </div>
+
+        <!-- Morning symptoms card -->
+        <div class="card" id="symptoms-card" style="display:none;">
+          <h2>Sintomas del ultimo dia</h2>
+          <div id="symptoms-info" class="symptoms-grid"></div>
+        </div>
+
+        <div class="card alert-card" id="inhaler-card">
+          <div class="card-icon">💨</div>
+          <div>
+            <h3>Inhalador de rescate</h3>
+            <p><span id="inhaler-count" class="big-number">0</span> usos en 7 dias</p>
+          </div>
+        </div>
+
+        <div class="card alert-card" id="episodes-card">
+          <div class="card-icon">😮‍💨</div>
+          <div>
+            <h3>Episodios de ahogo</h3>
+            <p><span id="episodes-count" class="big-number">0</span> en 7 dias</p>
+          </div>
+        </div>
+
+        <div class="card alert-card" id="emergency-card" style="display:none;">
+          <div class="card-icon">🚨</div>
+          <div>
+            <h3>Eventos de emergencia</h3>
+            <p id="emergency-info" class="emergency-text"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Day-by-day table -->
+      <div class="card table-card">
+        <h2>Dia a dia</h2>
+        <div class="table-scroll">
+          <table id="days-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Estado</th>
+                <th>Respiracion</th>
+                <th>Fatiga</th>
+                <th>Tos</th>
+                <th>Medicacion</th>
+                <th>Notas</th>
+              </tr>
+            </thead>
+            <tbody id="days-tbody">
+            </tbody>
+          </table>
+        </div>
+        <p id="no-data" style="display:none;" class="no-data">No hay datos disponibles todavia.</p>
+      </div>
+
+      <!-- Footer -->
+      <footer>
+        <p>Generado por Appbuelito</p>
+        <p class="disclaimer">Esta informacion no sustituye la atencion medica profesional.</p>
+      </footer>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
+  <script src="https://unpkg.com/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

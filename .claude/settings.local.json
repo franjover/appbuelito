@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell.exe -NoProfile -Command \":*)",
+      "Bash(\"C:/Users/franj/flutter/bin/dart\" run:*)"
+    ]
+  }
+}

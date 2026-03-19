@@ -3,133 +3,316 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Appbuelito - Portal Familiar</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>Appbuelito - Descargar</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❤️</text></svg>">
+  <style>
+    :root {
+      --primary: #1565C0;
+      --primary-light: #42A5F5;
+      --green: #2E7D32;
+      --text: #1A1A2E;
+      --text-secondary: #666;
+      --bg: #F5F5F5;
+      --surface: #FFFFFF;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #1565C0 0%, #0D47A1 100%);
+      color: white;
+      text-align: center;
+      padding: 60px 24px 80px;
+    }
+
+    .hero-logo { font-size: 100px; margin-bottom: 16px; }
+
+    .hero h1 {
+      font-size: 42px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      color: white;
+    }
+
+    .hero .tagline {
+      font-size: 20px;
+      opacity: 0.9;
+      max-width: 500px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      color: var(--primary);
+      font-size: 22px;
+      font-weight: 700;
+      padding: 20px 40px;
+      border-radius: 20px;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+
+    .download-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 28px rgba(0,0,0,0.3);
+    }
+
+    .download-btn .icon { font-size: 28px; }
+
+    .version-info {
+      margin-top: 16px;
+      font-size: 15px;
+      opacity: 0.7;
+    }
+
+    .version-info span { margin: 0 8px; }
+
+    /* Features */
+    .features {
+      max-width: 800px;
+      margin: -40px auto 0;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .feature-card {
+      background: var(--surface);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .feature-icon { font-size: 48px; margin-bottom: 12px; }
+
+    .feature-card h3 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--primary);
+    }
+
+    .feature-card p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* How to install */
+    .section {
+      max-width: 800px;
+      margin: 48px auto;
+      padding: 0 16px;
+    }
+
+    .section h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 24px;
+    }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+    }
+
+    .step {
+      background: var(--surface);
+      border-radius: 16px;
+      padding: 24px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+
+    .step-number {
+      background: var(--primary);
+      color: white;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .step-content h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* Family portal link */
+    .portal-link {
+      text-align: center;
+      margin: 48px auto;
+      padding: 32px 16px;
+      background: var(--surface);
+      max-width: 600px;
+      border-radius: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .portal-link h2 {
+      font-size: 24px;
+      color: var(--primary);
+      margin-bottom: 8px;
+    }
+
+    .portal-link p {
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+    }
+
+    .portal-link a {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      padding: 14px 32px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 18px;
+      transition: opacity 0.2s;
+    }
+
+    .portal-link a:hover { opacity: 0.9; }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 32px 16px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      border-top: 1px solid #E0E0E0;
+      margin-top: 48px;
+    }
+
+    footer .disclaimer {
+      font-size: 12px;
+      margin-top: 4px;
+      color: #999;
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 { font-size: 32px; }
+      .hero .tagline { font-size: 17px; }
+      .download-btn { font-size: 18px; padding: 16px 28px; }
+      .features { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-  <!-- LOGIN SCREEN -->
-  <div id="login-screen" class="screen">
-    <div class="login-container">
-      <div class="logo">❤️</div>
-      <h1>Appbuelito</h1>
-      <p class="subtitle">Portal familiar</p>
-      <p class="description">Introduce el codigo de acceso que te ha dado tu familiar para ver sus datos de salud.</p>
-      <div class="code-input-group">
-        <input type="text" id="access-code" placeholder="ABC-XYZ" maxlength="7" autocomplete="off" autofocus>
-        <button id="login-btn" onclick="validateCode()">Entrar</button>
-      </div>
-      <p id="login-error" class="error" style="display:none;"></p>
+
+  <div class="hero">
+    <div class="hero-logo">❤️</div>
+    <h1>Appbuelito</h1>
+    <p class="tagline">Tu companero diario para vivir mejor con EPOC. Diseno sencillo, letras grandes y todo en espanol.</p>
+    <a href="https://github.com/franjover/appbuelito/releases/latest/download/appbuelito.apk" class="download-btn" id="download-link">
+      <span class="icon">📲</span>
+      Descargar para Android
+    </a>
+    <div class="version-info" id="version-info">
+      <span>Version 1.0.0</span>
     </div>
   </div>
 
-  <!-- DASHBOARD SCREEN -->
-  <div id="dashboard-screen" class="screen" style="display:none;">
-    <header>
-      <div class="header-content">
-        <div>
-          <h1 id="patient-name">Paciente</h1>
-          <p id="patient-diagnosis" class="subtitle">EPOC</p>
-        </div>
-        <div class="header-actions">
-          <button class="header-btn" onclick="refreshData()" title="Actualizar datos">🔄</button>
-          <button class="header-btn" onclick="downloadReport()" title="Descargar informe">📄</button>
-          <button class="logout-btn" onclick="logout()">Salir</button>
-        </div>
-      </div>
-    </header>
-
-    <main>
-      <!-- Freshness banner -->
-      <div id="freshness-banner" class="freshness-banner" style="display:none;">
-        <span>⚠️ Los datos pueden no estar actualizados. Ultima sincronizacion del dispositivo: <span id="freshness-time"></span></span>
-      </div>
-
-      <!-- Last sync -->
-      <p id="last-sync" class="sync-info"></p>
-
-      <!-- Summary cards -->
-      <div class="cards-grid">
-        <div class="card summary-card">
-          <h2>Ultimos 7 dias</h2>
-          <div class="day-summary" id="day-summary">
-            <div class="day-badge green"><span id="green-count">0</span> <small>buenos</small></div>
-            <div class="day-badge yellow"><span id="yellow-count">0</span> <small>regulares</small></div>
-            <div class="day-badge red"><span id="red-count">0</span> <small>malos</small></div>
-          </div>
-        </div>
-
-        <div class="card" id="today-card">
-          <h2>Ultimo dia registrado</h2>
-          <div id="today-info"><p>Cargando...</p></div>
-        </div>
-
-        <!-- Morning symptoms card -->
-        <div class="card" id="symptoms-card" style="display:none;">
-          <h2>Sintomas del ultimo dia</h2>
-          <div id="symptoms-info" class="symptoms-grid"></div>
-        </div>
-
-        <div class="card alert-card" id="inhaler-card">
-          <div class="card-icon">💨</div>
-          <div>
-            <h3>Inhalador de rescate</h3>
-            <p><span id="inhaler-count" class="big-number">0</span> usos en 7 dias</p>
-          </div>
-        </div>
-
-        <div class="card alert-card" id="episodes-card">
-          <div class="card-icon">😮‍💨</div>
-          <div>
-            <h3>Episodios de ahogo</h3>
-            <p><span id="episodes-count" class="big-number">0</span> en 7 dias</p>
-          </div>
-        </div>
-
-        <div class="card alert-card" id="emergency-card" style="display:none;">
-          <div class="card-icon">🚨</div>
-          <div>
-            <h3>Eventos de emergencia</h3>
-            <p id="emergency-info" class="emergency-text"></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Day-by-day table -->
-      <div class="card table-card">
-        <h2>Dia a dia</h2>
-        <div class="table-scroll">
-          <table id="days-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>Respiracion</th>
-                <th>Fatiga</th>
-                <th>Tos</th>
-                <th>Medicacion</th>
-                <th>Notas</th>
-              </tr>
-            </thead>
-            <tbody id="days-tbody">
-            </tbody>
-          </table>
-        </div>
-        <p id="no-data" style="display:none;" class="no-data">No hay datos disponibles todavia.</p>
-      </div>
-
-      <!-- Footer -->
-      <footer>
-        <p>Generado por Appbuelito</p>
-        <p class="disclaimer">Esta informacion no sustituye la atencion medica profesional.</p>
-      </footer>
-    </main>
+  <div class="features">
+    <div class="feature-card">
+      <div class="feature-icon">📋</div>
+      <h3>Seguimiento diario</h3>
+      <p>Cuestionarios sencillos por la manana y la noche para controlar tus sintomas.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🏃</div>
+      <h3>Ejercicios adaptados</h3>
+      <p>5 bloques de ejercicios diarios ajustados a como te encuentras cada dia.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🆘</div>
+      <h3>Boton de emergencia</h3>
+      <p>Si te ahogas, la app te guia con ejercicios de respiracion y puede llamar a tu familiar.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👨‍👩‍👧</div>
+      <h3>Portal familiar</h3>
+      <p>Tu familia puede ver tus datos de salud desde cualquier dispositivo con un codigo de acceso.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">💨</div>
+      <h3>Registro de inhalador</h3>
+      <p>Lleva un control de cada vez que usas el inhalador de rescate.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">📊</div>
+      <h3>Informes PDF</h3>
+      <p>Genera informes para llevar a tu medico con todo tu historial resumido.</p>
+    </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-  <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
-  <script src="https://unpkg.com/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
-  <script src="config.js"></script>
-  <script src="app.js"></script>
+  <div class="section">
+    <h2>Como instalar</h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+          <h3>Descarga el archivo</h3>
+          <p>Pulsa el boton de arriba. Se descargara un archivo APK en tu movil.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+          <h3>Permite la instalacion</h3>
+          <p>Android te pedira permiso para instalar apps de fuentes externas. Pulsa "Permitir" o "Ajustes" y activa la opcion.</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+          <h3>Instala y abre</h3>
+          <p>Pulsa "Instalar" cuando aparezca el dialogo. Una vez instalada, abre Appbuelito y sigue el proceso de configuracion inicial.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="portal-link">
+    <h2>Eres familiar?</h2>
+    <p>Accede al portal para ver los datos de salud de tu ser querido.</p>
+    <a href="acceso-familia.html">Ir al Portal Familiar</a>
+  </div>
+
+  <footer>
+    <p>Appbuelito - Hecho con cuidado para nuestros mayores</p>
+    <p class="disclaimer">Esta aplicacion no sustituye la atencion medica profesional.</p>
+  </footer>
+
 </body>
 </html>

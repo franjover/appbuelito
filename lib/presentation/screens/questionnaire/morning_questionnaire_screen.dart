@@ -71,6 +71,23 @@ class _MorningQuestionnaireScreenState
     final engine = ref.read(routineEngineProvider);
     await engine.generateRoutine(flow.id, _classification);
 
+    // Schedule block reminder notifications
+    final notifService = ref.read(notificationServiceProvider);
+    final prefs = ref.read(appPreferencesProvider);
+    for (var i = 0; i < 5; i++) {
+      await notifService.scheduleBlockReminder(
+        blockIndex: i,
+        blockName: AppConstants.blockNames[i],
+        scheduledTime: prefs.getBlockTime(i),
+      );
+    }
+
+    // Update home screen widgets with new classification
+    try {
+      final widgetService = ref.read(widgetDataServiceProvider);
+      await widgetService.refreshFromCurrentFlow();
+    } catch (_) {}
+
     if (mounted) context.goNamed(RouteNames.home);
   }
 

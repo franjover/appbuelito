@@ -1,7 +1,7 @@
 name: appbuelito
 description: "App de acompanamiento diario para EPOC"
 publish_to: 'none'
-version: 1.1.0+3
+version: 1.2.0+4
 
 environment:
   sdk: ^3.7.0
@@ -63,6 +63,9 @@ dependencies:
 
   # Connectivity
   connectivity_plus: ^6.1.1
+
+  # Home screen widgets
+  home_widget: ^0.7.0
 
   # Cloud sync (Supabase)
   supabase_flutter: ^2.8.0

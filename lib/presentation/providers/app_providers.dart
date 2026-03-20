@@ -12,6 +12,7 @@ import '../../domain/services/emergency_service.dart';
 import '../../domain/services/video_source_service.dart';
 import '../../domain/services/notification_service.dart';
 import '../../domain/services/report_generator_service.dart';
+import '../../domain/services/widget_data_service.dart';
 
 /// Database singleton provider.
 final databaseProvider = Provider<AppDatabase>((ref) {
@@ -40,7 +41,7 @@ final dailyFlowServiceProvider = Provider<DailyFlowService>((ref) {
 
 /// RoutineEngine provider.
 final routineEngineProvider = Provider<RoutineEngine>((ref) {
-  return RoutineEngine(ref.watch(databaseProvider));
+  return RoutineEngine(ref.watch(databaseProvider), ref.watch(appPreferencesProvider));
 });
 
 /// EmergencyService provider.
@@ -97,6 +98,11 @@ final userProfileProvider = StreamProvider((ref) {
 final inhalerUsesProvider = StreamProvider.family((ref, int flowId) {
   final db = ref.watch(databaseProvider);
   return db.inhalerDao.watchUsesForFlow(flowId);
+});
+
+/// WidgetDataService provider.
+final widgetDataServiceProvider = Provider<WidgetDataService>((ref) {
+  return WidgetDataService(ref.watch(databaseProvider));
 });
 
 /// ReportGeneratorService provider.

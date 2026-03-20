@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/widgets/confirmation_dialog.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../data/local/database/app_database.dart';
 import '../../providers/app_providers.dart';
@@ -39,6 +40,19 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
     }
     if (_isHolding && mounted) {
       _triggerEmergency();
+    }
+  }
+
+  Future<void> _confirmAndCall(EmergencyContact contact) async {
+    final confirmed = await showLargeConfirmationDialog(
+      context: context,
+      title: 'Llamar a ${contact.name}?',
+      message: 'Se iniciara una llamada a ${contact.name} (${contact.phone}).',
+      confirmText: 'Llamar',
+      confirmVariant: LargeButtonVariant.danger,
+    );
+    if (confirmed && mounted) {
+      _triggerEmergency(contact: contact);
     }
   }
 
@@ -189,7 +203,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                                 '${c.name} · ${c.relationship}',
                                 style: const TextStyle(fontSize: 18),
                               ),
-                              onPressed: _callInProgress ? null : () => _triggerEmergency(contact: c),
+                              onPressed: _callInProgress ? null : () => _confirmAndCall(c),
                             ),
                           ),
                         )),

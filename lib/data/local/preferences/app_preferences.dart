@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/constants/app_constants.dart';
 
 /// Wrapper around SharedPreferences for simple app-level flags.
 class AppPreferences {
@@ -45,6 +46,17 @@ class AppPreferences {
     await _prefs.setInt(_keyEveningNotifHour, hour);
     await _prefs.setInt(_keyEveningNotifMinute, minute);
   }
+
+  // ── Block schedule keys ───────────────────────────────────────
+
+  /// Returns the scheduled time for a block (e.g. "08:30").
+  /// Falls back to the default from AppConstants.blockTimes.
+  String getBlockTime(int index) {
+    return _prefs.getString('block_${index}_time') ?? AppConstants.blockTimes[index];
+  }
+
+  Future<void> setBlockTime(int index, String time) =>
+      _prefs.setString('block_${index}_time', time);
 
   // ── Cloud sync keys ──────────────────────────────────────────
 

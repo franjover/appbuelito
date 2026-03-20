@@ -636,6 +636,27 @@ function generatePDF(data) {
     });
   }
 
+  // Interpretation guide
+  let yInterp = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(12); doc.setTextColor(0);
+  doc.text('Como leer este informe', 14, yInterp);
+  doc.autoTable({
+    startY: yInterp + 4,
+    head: [['Concepto', 'Significado']],
+    body: [
+      ['Dia verde (<=10 pts)', 'Dia estable. El paciente respira bien, duerme bien y tiene poca tos.'],
+      ['Dia amarillo (11-17 pts)', 'Dia regular. Sintomas moderados. Se reduce la intensidad.'],
+      ['Dia rojo (>17 pts)', 'Mal dia. Sintomas importantes. Solo respiracion y relajacion suaves.'],
+      ['Puntuacion (5-25)', 'Suma de 5 preguntas matutinas. Cada una de 1 (muy bien) a 5 (muy mal).'],
+      ['Escala sintomas (1-5)', '1=muy bien, 2=bien, 3=normal, 4=mal, 5=muy mal.'],
+      ['Inhalador de rescate', 'Cada uso indica dificultad respiratoria. Mas usos = peor control.'],
+      ['Episodio de ahogo', 'Crisis respiratoria aguda. Activacion del flujo de emergencia.'],
+    ],
+    theme: 'striped', styles: { fontSize: 8 },
+    headStyles: { fillColor: [100, 100, 100] },
+    columnStyles: { 0: { cellWidth: 45 } },
+  });
+
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
@@ -687,6 +708,14 @@ function formatTimeAgo(date) {
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `hace ${hours}h`;
   return `hace ${Math.floor(hours / 24)} dia${Math.floor(hours/24) > 1 ? 's' : ''}`;
+}
+
+function toggleInterpretation() {
+  const body = document.getElementById('interpretation-body');
+  const arrow = document.getElementById('interpretation-arrow');
+  const visible = body.style.display !== 'none';
+  body.style.display = visible ? 'none' : 'block';
+  arrow.classList.toggle('open', !visible);
 }
 
 function logout() {

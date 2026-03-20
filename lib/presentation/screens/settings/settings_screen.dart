@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../core/constants/app_constants.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/large_card.dart';
 import '../../providers/app_providers.dart';
@@ -30,6 +31,29 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final notif = ref.read(notificationServiceProvider);
     await notif.scheduleMorningNotification(
         hour: picked.hour, minute: picked.minute);
+    setState(() {});
+  }
+
+  Future<void> _pickBlockTime(int index) async {
+    final prefs = ref.read(appPreferencesProvider);
+    final current = prefs.getBlockTime(index);
+    final parts = current.split(':');
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+          hour: int.parse(parts[0]), minute: int.parse(parts[1])),
+      helpText: AppConstants.blockNames[index],
+    );
+    if (picked == null) return;
+    final timeStr =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+    await prefs.setBlockTime(index, timeStr);
+    final notif = ref.read(notificationServiceProvider);
+    await notif.scheduleBlockReminder(
+      blockIndex: index,
+      blockName: AppConstants.blockNames[index],
+      scheduledTime: timeStr,
+    );
     setState(() {});
   }
 
@@ -154,6 +178,46 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     trailing: const Icon(Icons.chevron_right),
                     onTap: _pickEveningTime,
                   ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Block schedule card
+            LargeCard(
+              leadingIcon: Icons.schedule,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Horario de actividades',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Elige a que hora quieres hacer cada bloque del dia.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  for (var i = 0; i < 5; i++)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: Icon(
+                        [Icons.wb_twilight, Icons.wb_sunny, Icons.lunch_dining,
+                         Icons.wb_cloudy, Icons.nights_stay][i],
+                        color: AppColors.primary,
+                      ),
+                      title: Text(AppConstants.blockNames[i]),
+                      subtitle: Text(
+                        prefs.getBlockTime(i),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => _pickBlockTime(i),
+                    ),
                 ],
               ),
             ),

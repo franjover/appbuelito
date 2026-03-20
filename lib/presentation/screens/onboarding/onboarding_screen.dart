@@ -107,7 +107,27 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
       // Initialize notifications
       final notifService = ref.read(notificationServiceProvider);
       await notifService.initialize();
-      await notifService.scheduleMorningNotification();
+      await notifService.scheduleMorningNotification(
+        hour: prefs.morningNotifHour,
+        minute: prefs.morningNotifMinute,
+      );
+      await notifService.scheduleEveningReminder(
+        hour: prefs.eveningNotifHour,
+        minute: prefs.eveningNotifMinute,
+      );
+
+      // Welcome notification
+      await notifService.showNow(
+        id: 0,
+        title: 'Bienvenido a Appbuelito!',
+        body: 'Tu app de acompanamiento diario esta lista. Cada dia te recordaremos tus actividades.',
+      );
+
+      // Initialize home screen widgets
+      try {
+        final widgetService = ref.read(widgetDataServiceProvider);
+        await widgetService.refreshFromCurrentFlow();
+      } catch (_) {}
 
       if (mounted) context.goNamed(RouteNames.home);
     } catch (e) {

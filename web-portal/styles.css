@@ -424,6 +424,16 @@ tr:last-child td { border-bottom: none; }
 .save-alerts-btn:hover { background: #1976D2; }
 .alerts-status { font-size: 15px; font-weight: 600; margin-top: 4px; }
 
+/* Interpretation card */
+.interpretation-card h2 { display: flex; align-items: center; gap: 8px; }
+#interpretation-arrow { font-size: 14px; transition: transform 0.2s; }
+#interpretation-arrow.open { transform: rotate(90deg); }
+.interpretation-body { margin-top: 12px; }
+.interpretation-table { font-size: 14px; }
+.interpretation-table td:first-child { font-weight: 600; white-space: nowrap; min-width: 160px; }
+.interpretation-warning { margin-top: 12px; font-size: 14px; color: #795548; background: #FFF8E1; padding: 10px 14px; border-radius: 8px; }
+.interpretation-disclaimer { margin-top: 8px; font-size: 13px; font-weight: 600; color: var(--red); }
+
 /* Footer */
 footer {
   text-align: center;

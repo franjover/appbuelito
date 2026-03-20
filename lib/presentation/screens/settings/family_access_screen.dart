@@ -219,7 +219,7 @@ class _FamilyAccessScreenState extends ConsumerState<FamilyAccessScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Acceso familiar')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -419,7 +419,7 @@ class _FamilyAccessScreenState extends ConsumerState<FamilyAccessScreen> {
             ),
             const SizedBox(height: 4),
             Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+              mainAxisAlignment: MainAxisAlignment.start,
               children: [
                 IconButton(
                   icon: Icon(

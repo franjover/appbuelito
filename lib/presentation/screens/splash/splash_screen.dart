@@ -46,6 +46,14 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         // Notifications unavailable — continue without them
       }
 
+      // Update home screen widgets
+      try {
+        final widgetService = ref.read(widgetDataServiceProvider);
+        await widgetService.refreshFromCurrentFlow();
+      } catch (_) {
+        // Widgets unavailable — continue
+      }
+
       // Background cloud sync (non-blocking, fire-and-forget)
       try {
         final syncService = ref.read(syncServiceProvider);

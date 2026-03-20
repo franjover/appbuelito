@@ -191,6 +191,29 @@
         </div>
       </div>
 
+      <!-- Interpretation guide -->
+      <div class="card interpretation-card" id="interpretation-card">
+        <h2 onclick="toggleInterpretation()" style="cursor:pointer;">
+          📖 Como leer estos datos <span id="interpretation-arrow">▶</span>
+        </h2>
+        <div id="interpretation-body" class="interpretation-body" style="display:none;">
+          <table class="interpretation-table">
+            <thead><tr><th>Concepto</th><th>Significado</th></tr></thead>
+            <tbody>
+              <tr><td><span class="status-dot green"></span> Dia verde (&le;10 pts)</td><td>Dia estable. El paciente respira bien, duerme bien y tiene poca tos. Se realizan ejercicios completos.</td></tr>
+              <tr><td><span class="status-dot yellow"></span> Dia amarillo (11-17 pts)</td><td>Dia regular. Algunos sintomas moderados. Se reduce la intensidad de los ejercicios.</td></tr>
+              <tr><td><span class="status-dot red"></span> Dia rojo (&gt;17 pts)</td><td>Mal dia. Sintomas importantes. Solo se hacen ejercicios de respiracion y relajacion suaves.</td></tr>
+              <tr><td>Puntuacion (5-25)</td><td>Suma de 5 preguntas matutinas (respiracion, sueno, fatiga, tos, flema). Cada una de 1 (muy bien) a 5 (muy mal).</td></tr>
+              <tr><td>Escala de sintomas (1-5)</td><td>1 = muy bien / nada, 2 = bien / poco, 3 = normal, 4 = mal / bastante, 5 = muy mal / mucho.</td></tr>
+              <tr><td>💨 Inhalador de rescate</td><td>Cada uso registrado indica un momento de dificultad respiratoria. Mas usos = peor control.</td></tr>
+              <tr><td>😮‍💨 Episodio de ahogo</td><td>Activacion del flujo de emergencia "Me ahogo". Indica crisis respiratoria aguda.</td></tr>
+            </tbody>
+          </table>
+          <p class="interpretation-warning">⚠️ Que vigilar: aumento progresivo de la puntuacion diaria, dias rojos consecutivos, aumento de uso del inhalador de rescate, o episodios de ahogo frecuentes. Ante cualquier cambio significativo, consulte con su medico.</p>
+          <p class="interpretation-disclaimer">Este informe es orientativo y no sustituye la valoracion medica profesional.</p>
+        </div>
+      </div>
+
       <!-- Footer -->
       <footer>
         <p>Generado por Appbuelito</p>

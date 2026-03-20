@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Appbuelito</string>
+    <string name="widget_status_description">Estado diario del paciente</string>
+    <string name="widget_emergency_description">Boton de emergencia</string>
+</resources>

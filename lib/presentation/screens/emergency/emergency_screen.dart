@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/widgets/large_button.dart';
+import '../../../data/local/database/app_database.dart';
 import '../../providers/app_providers.dart';
 
 class EmergencyScreen extends ConsumerStatefulWidget {
@@ -41,7 +42,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
     }
   }
 
-  Future<void> _triggerEmergency() async {
+  Future<void> _triggerEmergency({EmergencyContact? contact}) async {
     setState(() => _callInProgress = true);
 
     final contacts = ref.read(emergencyContactsProvider).value ?? [];
@@ -49,11 +50,11 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
     final emergencyService = ref.read(emergencyServiceProvider);
 
     if (contacts.isEmpty) {
-      // Fallback: call 112
       await emergencyService.callEmergencyServices();
     } else {
+      final targetContacts = contact != null ? [contact] : contacts;
       await emergencyService.triggerEmergency(
-        contacts: contacts,
+        contacts: targetContacts,
         patientName: profile?.name ?? 'Paciente',
       );
     }
@@ -146,7 +147,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
               // Contact list
               contactsAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, _) => const SizedBox.shrink(),
+                error: (_, __) => const SizedBox.shrink(),
                 data: (contacts) {
                   if (contacts.isEmpty) {
                     return Text(
@@ -157,14 +158,43 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen> {
                       textAlign: TextAlign.center,
                     );
                   }
+                  // Show principal contact name above the hold button
+                  // Secondary contacts as direct-call buttons
+                  final secondary = contacts.length > 1 ? contacts.sublist(1) : <EmergencyContact>[];
                   return Column(
-                    children: contacts.map((c) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 4),
-                      child: Text(
-                        '${c.name} (${c.relationship})',
+                    children: [
+                      Text(
+                        'Llamando a ${contacts.first.name}',
                         style: const TextStyle(color: Colors.white70, fontSize: 18),
                       ),
-                    )).toList(),
+                      if (secondary.isNotEmpty) ...[
+                        const SizedBox(height: 16),
+                        Text(
+                          'O llama directamente a:',
+                          style: const TextStyle(color: Colors.white54, fontSize: 16),
+                        ),
+                        const SizedBox(height: 8),
+                        ...secondary.map((c) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: Colors.white38),
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                              ),
+                              icon: const Icon(Icons.phone, size: 22),
+                              label: Text(
+                                '${c.name} · ${c.relationship}',
+                                style: const TextStyle(fontSize: 18),
+                              ),
+                              onPressed: _callInProgress ? null : () => _triggerEmergency(contact: c),
+                            ),
+                          ),
+                        )),
+                      ],
+                    ],
                   );
                 },
               ),

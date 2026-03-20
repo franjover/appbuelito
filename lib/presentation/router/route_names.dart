@@ -21,4 +21,5 @@ class RouteNames {
   static const contacts = 'contacts';
   static const editProfile = 'edit-profile';
   static const familyAccess = 'family-access';
+  static const inhalerHistory = 'inhaler-history';
 }

@@ -9,6 +9,10 @@ class AppPreferences {
   static const _keyOnboardingComplete = 'onboarding_complete';
   static const _keyLastFlowDate = 'last_flow_date';
   static const _keyPreferredStartHour = 'preferred_start_hour';
+  static const _keyMorningNotifHour = 'morning_notif_hour';
+  static const _keyMorningNotifMinute = 'morning_notif_minute';
+  static const _keyEveningNotifHour = 'evening_notif_hour';
+  static const _keyEveningNotifMinute = 'evening_notif_minute';
 
   bool get isOnboardingComplete =>
       _prefs.getBool(_keyOnboardingComplete) ?? false;
@@ -26,6 +30,21 @@ class AppPreferences {
 
   Future<void> setPreferredStartHour(int hour) =>
       _prefs.setInt(_keyPreferredStartHour, hour);
+
+  int get morningNotifHour => _prefs.getInt(_keyMorningNotifHour) ?? 8;
+  int get morningNotifMinute => _prefs.getInt(_keyMorningNotifMinute) ?? 0;
+  int get eveningNotifHour => _prefs.getInt(_keyEveningNotifHour) ?? 20;
+  int get eveningNotifMinute => _prefs.getInt(_keyEveningNotifMinute) ?? 30;
+
+  Future<void> setMorningNotif(int hour, int minute) async {
+    await _prefs.setInt(_keyMorningNotifHour, hour);
+    await _prefs.setInt(_keyMorningNotifMinute, minute);
+  }
+
+  Future<void> setEveningNotif(int hour, int minute) async {
+    await _prefs.setInt(_keyEveningNotifHour, hour);
+    await _prefs.setInt(_keyEveningNotifMinute, minute);
+  }
 
   // ── Cloud sync keys ──────────────────────────────────────────
 

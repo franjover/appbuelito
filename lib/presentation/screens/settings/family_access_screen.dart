@@ -415,12 +415,18 @@ class _FamilyAccessScreenState extends ConsumerState<FamilyAccessScreen> {
                     label: const Text('Enviar'),
                   ),
                 ),
-                const SizedBox(width: 8),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
                 IconButton(
                   icon: Icon(
                     isActive ? Icons.pause_circle : Icons.play_circle,
                     color: isActive ? AppColors.yellowDay : AppColors.greenDay,
                   ),
+                  tooltip: isActive ? 'Pausar acceso' : 'Activar acceso',
                   onPressed: () async {
                     final syncService = ref.read(syncServiceProvider);
                     if (syncService == null) return;
@@ -431,6 +437,7 @@ class _FamilyAccessScreenState extends ConsumerState<FamilyAccessScreen> {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: AppColors.danger),
+                  tooltip: 'Eliminar acceso',
                   onPressed: () async {
                     final confirm = await showLargeConfirmationDialog(
                       context: context,

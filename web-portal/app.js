@@ -5,7 +5,10 @@
 
 var sbClient = null;
 var currentAccessCode = null;
-var dashboardData = null; // cached for PDF generation
+var dashboardData = null;
+var chartSymptoms = null;
+var chartDays = null;
+var chartInhaler = null;
 
 // Initialize Supabase client
 function initSupabase() {
@@ -124,29 +127,26 @@ function showDashboard(data) {
   updateEmergencyCard(emergencies);
   updateDaysTable(flows, symptoms);
 
+  // New sections
+  updateWeeklyComparison(data.this_week, data.last_week);
+  updateCharts(flows, symptoms, data.inhaler_uses_detail || []);
+  updateInhalerHistoryTable(data.inhaler_uses_detail || []);
+  loadAlertPrefs();
+
   const syncEl = document.getElementById('last-sync');
   const lastDataDate = data.last_data_date;
   const parts = [];
-  if (lastDataDate) {
-    parts.push('Ultimo dato registrado: ' + formatDateTime(lastDataDate));
-  }
-  if (lastDeviceSync) {
-    parts.push('Ultima sincronizacion: ' + formatDateTime(lastDeviceSync));
-  }
+  if (lastDataDate) parts.push('Ultimo dato registrado: ' + formatDateTime(lastDataDate));
+  if (lastDeviceSync) parts.push('Ultima sincronizacion: ' + formatDateTime(lastDeviceSync));
   syncEl.textContent = parts.join(' | ') || '';
 }
 
 // Freshness banner
 function updateFreshnessBanner(lastDeviceSync) {
   const banner = document.getElementById('freshness-banner');
-  if (!lastDeviceSync) {
-    banner.style.display = 'none';
-    return;
-  }
+  if (!lastDeviceSync) { banner.style.display = 'none'; return; }
   const syncDate = new Date(lastDeviceSync);
-  const diffMs = Date.now() - syncDate.getTime();
-  const diffHours = diffMs / (1000 * 60 * 60);
-
+  const diffHours = (Date.now() - syncDate.getTime()) / (1000 * 60 * 60);
   if (diffHours > 1) {
     banner.style.display = 'block';
     document.getElementById('freshness-time').textContent = formatTimeAgo(syncDate);
@@ -157,41 +157,26 @@ function updateFreshnessBanner(lastDeviceSync) {
 
 // Refresh data
 async function refreshData() {
-  if (!currentAccessCode || !sbClient) {
-    alert('Sesion no iniciada. Recarga la pagina.');
-    return;
-  }
+  if (!currentAccessCode || !sbClient) { alert('Sesion no iniciada. Recarga la pagina.'); return; }
 
   const btn = document.querySelector('[onclick="refreshData()"]');
   if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
 
   try {
-    const { data, error } = await sbClient.rpc('get_family_dashboard', {
-      p_access_code: currentAccessCode
-    });
+    const { data, error } = await sbClient.rpc('get_family_dashboard', { p_access_code: currentAccessCode });
     if (error) {
-      console.error('Refresh error:', error);
       alert('Error al actualizar. Recarga la pagina e intentalo de nuevo.');
     } else if (data && !data.error) {
       dashboardData = data;
       showDashboard(data);
     }
   } catch (e) {
-    console.error('Refresh exception:', e);
-    // Retry: recreate client and try once more
     try {
       sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      const { data } = await sbClient.rpc('get_family_dashboard', {
-        p_access_code: currentAccessCode
-      });
-      if (data && !data.error) {
-        dashboardData = data;
-        showDashboard(data);
-      } else {
-        alert('Error al actualizar. Intentalo de nuevo.');
-      }
+      const { data } = await sbClient.rpc('get_family_dashboard', { p_access_code: currentAccessCode });
+      if (data && !data.error) { dashboardData = data; showDashboard(data); }
+      else alert('Error al actualizar. Intentalo de nuevo.');
     } catch (e2) {
-      console.error('Retry failed:', e2);
       alert('Error de conexion. Comprueba tu internet y recarga la pagina.');
     }
   } finally {
@@ -201,10 +186,8 @@ async function refreshData() {
 
 // Update summary badges
 function updateSummary(flows) {
-  const now = new Date();
-  const weekAgo = new Date(now);
+  const weekAgo = new Date();
   weekAgo.setDate(weekAgo.getDate() - 7);
-
   let green = 0, yellow = 0, red = 0;
   for (const f of flows) {
     const fDate = new Date(f.flow_date + 'T12:00:00');
@@ -221,96 +204,55 @@ function updateSummary(flows) {
 // Update today/latest day card
 function updateTodayCard(flows) {
   const el = document.getElementById('today-info');
-  if (!flows.length) {
-    el.innerHTML = '<p class="no-data">Sin datos recientes</p>';
-    return;
-  }
-
+  if (!flows.length) { el.innerHTML = '<p class="no-data">Sin datos recientes</p>'; return; }
   const latest = flows[0];
-  const classification = {
-    green: '🟢 Buen dia',
-    yellow: '🟡 Dia regular',
-    red: '🔴 Mal dia',
-  }[latest.day_classification] || '⚪ Sin clasificar';
-
-  const medIcon = latest.medication_taken === true ? '💊 Tomo medicacion'
-    : latest.medication_taken === false ? '❌ No tomo medicacion' : '';
-
+  const classification = { green: '🟢 Buen dia', yellow: '🟡 Dia regular', red: '🔴 Mal dia' }[latest.day_classification] || '⚪ Sin clasificar';
+  const medIcon = latest.medication_taken === true ? '💊 Tomo medicacion' : latest.medication_taken === false ? '❌ No tomo medicacion' : '';
   el.innerHTML = `
     <p><strong>${formatDate(latest.flow_date)}</strong></p>
-    <p style="font-size: 22px; margin: 8px 0;">${classification}</p>
+    <p style="font-size:22px;margin:8px 0;">${classification}</p>
     ${latest.morning_score != null ? `<p>Puntuacion matutina: <strong>${latest.morning_score}</strong></p>` : ''}
     ${latest.respiratory_stability_score != null ? `<p>Estabilidad respiratoria: <strong>${latest.respiratory_stability_score}</strong></p>` : ''}
-    ${medIcon ? `<p style="margin-top: 6px;">${medIcon}</p>` : ''}
-    ${latest.evening_notes ? `<p style="color: var(--text-secondary); font-style: italic; margin-top: 6px;">"${latest.evening_notes}"</p>` : ''}
+    ${medIcon ? `<p style="margin-top:6px;">${medIcon}</p>` : ''}
+    ${latest.evening_notes ? `<p style="color:var(--text-secondary);font-style:italic;margin-top:6px;">"${latest.evening_notes}"</p>` : ''}
   `;
 }
 
-// Update symptoms card with morning questionnaire data
+// Update symptoms card
 function updateSymptomsCard(flows, symptoms) {
   const card = document.getElementById('symptoms-card');
   const el = document.getElementById('symptoms-info');
-
-  if (!flows.length || !symptoms.length) {
-    card.style.display = 'none';
-    return;
-  }
-
-  // Find morning symptom check for the latest flow
-  const latestFlowId = flows[0].flow_date; // match by date proximity
+  if (!flows.length || !symptoms.length) { card.style.display = 'none'; return; }
   const morningCheck = symptoms.find(s => s.moment === 'morning');
-  const eveningCheck = symptoms.find(s => s.moment === 'evening');
-
-  if (!morningCheck && !eveningCheck) {
-    card.style.display = 'none';
-    return;
-  }
-
-  card.style.display = 'block';
-
-  // Calculate 7-day averages for trend comparison
   const recentMorning = symptoms.filter(s => s.moment === 'morning').slice(0, 7);
   const avgBreathing = avg(recentMorning.map(s => s.breathing_today));
   const avgFatigue = avg(recentMorning.map(s => s.fatigue));
   const avgCough = avg(recentMorning.map(s => s.cough));
-
+  if (!morningCheck) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
   let html = '';
-
-  if (morningCheck) {
-    if (morningCheck.breathing_today != null) {
-      html += symptomItem('🫁', 'Respiracion', morningCheck.breathing_today, 5, avgBreathing);
-    }
-    if (morningCheck.fatigue != null) {
-      html += symptomItem('😴', 'Fatiga', morningCheck.fatigue, 5, avgFatigue);
-    }
-    if (morningCheck.cough != null) {
-      html += symptomItem('🤧', 'Tos', morningCheck.cough, 5, avgCough);
-    }
-    if (morningCheck.phlegm != null) {
-      const phlegmVal = morningCheck.phlegm > 2 ? 'Si' : 'No';
-      html += `<div class="symptom-item ${morningCheck.phlegm > 2 ? 'bad' : 'good'}">
-        <span class="symptom-emoji">💧</span>
-        <span class="symptom-label">Flema</span>
-        <span class="symptom-value">${phlegmVal}</span>
-      </div>`;
-    }
-    if (morningCheck.saturation != null) {
-      const satClass = morningCheck.saturation >= 95 ? 'good' : morningCheck.saturation >= 90 ? 'moderate' : 'bad';
-      html += `<div class="symptom-item ${satClass}">
-        <span class="symptom-emoji">🩸</span>
-        <span class="symptom-label">Saturacion</span>
-        <span class="symptom-value">${morningCheck.saturation}%</span>
-      </div>`;
-    }
-    if (morningCheck.pulse != null) {
-      html += `<div class="symptom-item">
-        <span class="symptom-emoji">💓</span>
-        <span class="symptom-label">Pulso</span>
-        <span class="symptom-value">${morningCheck.pulse}</span>
-      </div>`;
-    }
+  if (morningCheck.breathing_today != null) html += symptomItem('🫁', 'Respiracion', morningCheck.breathing_today, 5, avgBreathing);
+  if (morningCheck.fatigue != null) html += symptomItem('😴', 'Fatiga', morningCheck.fatigue, 5, avgFatigue);
+  if (morningCheck.cough != null) html += symptomItem('🤧', 'Tos', morningCheck.cough, 5, avgCough);
+  if (morningCheck.phlegm != null) {
+    html += `<div class="symptom-item ${morningCheck.phlegm > 2 ? 'bad' : 'good'}">
+      <span class="symptom-emoji">💧</span>
+      <span class="symptom-label">Flema</span>
+      <span class="symptom-value">${morningCheck.phlegm > 2 ? 'Si' : 'No'}</span></div>`;
   }
-
+  if (morningCheck.saturation != null) {
+    const satClass = morningCheck.saturation >= 95 ? 'good' : morningCheck.saturation >= 90 ? 'moderate' : 'bad';
+    html += `<div class="symptom-item ${satClass}">
+      <span class="symptom-emoji">🩸</span>
+      <span class="symptom-label">Saturacion</span>
+      <span class="symptom-value">${morningCheck.saturation}%</span></div>`;
+  }
+  if (morningCheck.pulse != null) {
+    html += `<div class="symptom-item">
+      <span class="symptom-emoji">💓</span>
+      <span class="symptom-label">Pulso</span>
+      <span class="symptom-value">${morningCheck.pulse}</span></div>`;
+  }
   el.innerHTML = html;
 }
 
@@ -321,13 +263,12 @@ function symptomItem(emoji, label, value, max, avgVal) {
   return `<div class="symptom-item ${severity}">
     <span class="symptom-emoji">${emoji}</span>
     <span class="symptom-label">${label}</span>
-    <span class="symptom-value">${labels[value] || value}/${max} ${trend}</span>
-  </div>`;
+    <span class="symptom-value">${labels[value] || value}/${max} ${trend}</span></div>`;
 }
 
-function trendArrow(current, avg) {
-  if (avg == null || isNaN(avg)) return '';
-  const diff = current - avg;
+function trendArrow(current, avgVal) {
+  if (avgVal == null || isNaN(avgVal)) return '';
+  const diff = current - avgVal;
   if (diff > 0.5) return '<span class="trend-up">↑</span>';
   if (diff < -0.5) return '<span class="trend-down">↓</span>';
   return '<span class="trend-same">→</span>';
@@ -339,7 +280,6 @@ function avg(arr) {
   return valid.reduce((a, b) => a + b, 0) / valid.length;
 }
 
-// Update inhaler card
 function updateInhalerCard(count) {
   document.getElementById('inhaler-count').textContent = count;
   if (count > 3) {
@@ -348,18 +288,13 @@ function updateInhalerCard(count) {
   }
 }
 
-// Update episodes card
 function updateEpisodesCard(count) {
   document.getElementById('episodes-count').textContent = count;
 }
 
-// Update emergency card
 function updateEmergencyCard(emergencies) {
   const card = document.getElementById('emergency-card');
-  if (!emergencies || !emergencies.length) {
-    card.style.display = 'none';
-    return;
-  }
+  if (!emergencies || !emergencies.length) { card.style.display = 'none'; return; }
   card.style.display = 'flex';
   const info = emergencies.map(e =>
     `${formatDateTime(e.timestamp)}: ${e.type}${e.contact_called ? ' (llamo a ' + e.contact_called + ')' : ''}`
@@ -367,99 +302,222 @@ function updateEmergencyCard(emergencies) {
   document.getElementById('emergency-info').innerHTML = info;
 }
 
-// Update enriched days table
 function updateDaysTable(flows, symptoms) {
   const tbody = document.getElementById('days-tbody');
   const noData = document.getElementById('no-data');
-  const allSymptoms = symptoms || [];
-
-  if (!flows.length) {
-    tbody.innerHTML = '';
-    noData.style.display = 'block';
-    return;
-  }
-
+  if (!flows.length) { tbody.innerHTML = ''; noData.style.display = 'block'; return; }
   noData.style.display = 'none';
-
   tbody.innerHTML = flows.map(f => {
-    const classLabel = {
-      green: 'Estable',
-      yellow: 'Regular',
-      red: 'Malo',
-    }[f.day_classification] || '-';
-
+    const classLabel = { green: 'Estable', yellow: 'Regular', red: 'Malo' }[f.day_classification] || '-';
     const dotClass = f.day_classification || 'none';
-
-    // Find morning symptoms for this flow's date
-    const morningCheck = allSymptoms.find(s =>
-      s.moment === 'morning' && s.daily_flow_id === f.id
-    ) || findSymptomByDate(allSymptoms, f.flow_date, 'morning');
-
-    const breathingLabel = morningCheck && morningCheck.breathing_today != null
-      ? scoreEmoji(morningCheck.breathing_today) : '-';
-    const fatigueLabel = morningCheck && morningCheck.fatigue != null
-      ? scoreEmoji(morningCheck.fatigue) : '-';
-    const coughLabel = morningCheck && morningCheck.cough != null
-      ? scoreEmoji(morningCheck.cough) : '-';
-
-    const medBadge = f.medication_taken === true
-      ? '<span class="med-badge yes">Si</span>'
-      : f.medication_taken === false
-        ? '<span class="med-badge no">No</span>'
-        : '<span class="med-badge unknown">-</span>';
-
-    const notes = f.evening_notes
-      ? `<span class="notes-cell" title="${escapeHtml(f.evening_notes)}">${escapeHtml(f.evening_notes)}</span>`
-      : '-';
-
+    const morningCheck = (symptoms || []).find(s =>
+      s.moment === 'morning' && (s.daily_flow_id === f.id || matchDate(s.created_at, f.flow_date))
+    );
+    const breathingLabel = morningCheck && morningCheck.breathing_today != null ? scoreEmoji(morningCheck.breathing_today) : '-';
+    const fatigueLabel = morningCheck && morningCheck.fatigue != null ? scoreEmoji(morningCheck.fatigue) : '-';
+    const coughLabel = morningCheck && morningCheck.cough != null ? scoreEmoji(morningCheck.cough) : '-';
+    const medBadge = f.medication_taken === true ? '<span class="med-badge yes">Si</span>'
+      : f.medication_taken === false ? '<span class="med-badge no">No</span>'
+      : '<span class="med-badge unknown">-</span>';
+    const notes = f.evening_notes ? `<span class="notes-cell" title="${escapeHtml(f.evening_notes)}">${escapeHtml(f.evening_notes)}</span>` : '-';
     return `<tr>
       <td>${formatDate(f.flow_date)}</td>
       <td><span class="status-dot ${dotClass}"></span>${classLabel}</td>
-      <td>${breathingLabel}</td>
-      <td>${fatigueLabel}</td>
-      <td>${coughLabel}</td>
-      <td>${medBadge}</td>
-      <td>${notes}</td>
-    </tr>`;
+      <td>${breathingLabel}</td><td>${fatigueLabel}</td><td>${coughLabel}</td>
+      <td>${medBadge}</td><td>${notes}</td></tr>`;
   }).join('');
 }
 
-function findSymptomByDate(symptoms, flowDate, moment) {
-  return symptoms.find(s => {
-    if (s.moment !== moment) return false;
-    if (!s.created_at) return false;
-    const sDate = s.created_at.split('T')[0];
-    return sDate === flowDate;
+// ── D2: Weekly comparison ────────────────────────────────
+function updateWeeklyComparison(thisWeek, lastWeek) {
+  const card = document.getElementById('weekly-comparison-card');
+  if (!thisWeek || !lastWeek) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  function arrow(curr, prev) {
+    const c = Number(curr), p = Number(prev);
+    if (c > p) return '<span class="cmp-up">↑</span>';
+    if (c < p) return '<span class="cmp-down">↓</span>';
+    return '<span class="cmp-same">→</span>';
+  }
+
+  const rows = [
+    { label: '🟢 Dias buenos', curr: thisWeek.green, prev: lastWeek.green, goodUp: true },
+    { label: '🟡 Dias regulares', curr: thisWeek.yellow, prev: lastWeek.yellow, goodUp: false },
+    { label: '🔴 Dias malos', curr: thisWeek.red, prev: lastWeek.red, goodUp: false },
+    { label: '💨 Inhalaciones', curr: thisWeek.inhaler_count, prev: lastWeek.inhaler_count, goodUp: false },
+  ];
+
+  document.getElementById('weekly-comparison-grid').innerHTML = rows.map(r => `
+    <div class="cmp-row">
+      <span class="cmp-label">${r.label}</span>
+      <span class="cmp-curr">${r.curr}</span>
+      ${arrow(r.curr, r.prev)}
+      <span class="cmp-prev">${r.prev} sem. ant.</span>
+    </div>`
+  ).join('');
+}
+
+// ── D1: Charts ───────────────────────────────────────────
+function updateCharts(flows, symptoms, inhalerUses) {
+  const card = document.getElementById('charts-card');
+  if (!flows.length && !inhalerUses.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  // Build last 14 days date labels
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().split('T')[0]);
+  }
+  const shortLabels = days.map(d => { const dd = new Date(d + 'T12:00:00'); return `${dd.getDate()}/${dd.getMonth()+1}`; });
+
+  // Symptoms chart data
+  const breathingData = days.map(date => {
+    const sym = symptoms.find(s => s.moment === 'morning' && matchDate(s.created_at, date));
+    return sym && sym.breathing_today != null ? sym.breathing_today : null;
+  });
+  const fatigueData = days.map(date => {
+    const sym = symptoms.find(s => s.moment === 'morning' && matchDate(s.created_at, date));
+    return sym && sym.fatigue != null ? sym.fatigue : null;
+  });
+  const coughData = days.map(date => {
+    const sym = symptoms.find(s => s.moment === 'morning' && matchDate(s.created_at, date));
+    return sym && sym.cough != null ? sym.cough : null;
+  });
+
+  // Day classification stacked bar
+  const greenData = days.map(date => flows.find(f => f.flow_date === date && f.day_classification === 'green') ? 1 : 0);
+  const yellowData = days.map(date => flows.find(f => f.flow_date === date && f.day_classification === 'yellow') ? 1 : 0);
+  const redData = days.map(date => flows.find(f => f.flow_date === date && f.day_classification === 'red') ? 1 : 0);
+
+  // Inhaler uses per day
+  const inhalerPerDay = days.map(date =>
+    inhalerUses.filter(u => u.timestamp && u.timestamp.split('T')[0] === date).length
+  );
+
+  const chartDefaults = {
+    responsive: true,
+    plugins: { legend: { labels: { font: { size: 13 } } } },
+    scales: { y: { beginAtZero: true } },
+  };
+
+  // Destroy old charts
+  if (chartSymptoms) { chartSymptoms.destroy(); chartSymptoms = null; }
+  if (chartDays) { chartDays.destroy(); chartDays = null; }
+  if (chartInhaler) { chartInhaler.destroy(); chartInhaler = null; }
+
+  chartSymptoms = new Chart(document.getElementById('chart-symptoms'), {
+    type: 'line',
+    data: {
+      labels: shortLabels,
+      datasets: [
+        { label: 'Respiracion', data: breathingData, borderColor: '#1565C0', backgroundColor: 'transparent', spanGaps: true, tension: 0.3 },
+        { label: 'Fatiga', data: fatigueData, borderColor: '#F57F17', backgroundColor: 'transparent', spanGaps: true, tension: 0.3 },
+        { label: 'Tos', data: coughData, borderColor: '#6A1B9A', backgroundColor: 'transparent', spanGaps: true, tension: 0.3 },
+      ],
+    },
+    options: { ...chartDefaults, scales: { y: { beginAtZero: true, max: 5, ticks: { stepSize: 1 } } } },
+  });
+
+  chartDays = new Chart(document.getElementById('chart-days'), {
+    type: 'bar',
+    data: {
+      labels: shortLabels,
+      datasets: [
+        { label: 'Bueno', data: greenData, backgroundColor: '#2E7D32' },
+        { label: 'Regular', data: yellowData, backgroundColor: '#F57F17' },
+        { label: 'Malo', data: redData, backgroundColor: '#C62828' },
+      ],
+    },
+    options: { ...chartDefaults, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, max: 1, ticks: { display: false } } } },
+  });
+
+  chartInhaler = new Chart(document.getElementById('chart-inhaler'), {
+    type: 'bar',
+    data: {
+      labels: shortLabels,
+      datasets: [{ label: 'Inhalaciones', data: inhalerPerDay, backgroundColor: '#0288D1' }],
+    },
+    options: { ...chartDefaults, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } },
   });
 }
 
-function scoreEmoji(score) {
-  const emojis = { 1: '😊', 2: '🙂', 3: '😐', 4: '😟', 5: '😣' };
-  return emojis[score] || String(score);
+// ── D3: Inhaler history table ────────────────────────────
+function updateInhalerHistoryTable(uses) {
+  const card = document.getElementById('inhaler-history-card');
+  const tbody = document.getElementById('inhaler-tbody');
+  if (!uses || !uses.length) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  function contextLabel(ctx) {
+    const map = { chokingFlow: 'Episodio de ahogo', routine: 'Durante ejercicio', symptomCheck: 'Control de sintomas' };
+    return map[ctx] || 'Uso normal';
+  }
+  function reliefEmoji(level) {
+    const emojis = ['😞', '😕', '😐', '😊', '😄'];
+    if (!level || level < 1 || level > 5) return '—';
+    return emojis[level - 1];
+  }
+
+  tbody.innerHTML = uses.map(u => `<tr>
+    <td>${formatDateTime(u.timestamp)}</td>
+    <td>${contextLabel(u.usage_context)}</td>
+    <td>${u.puffs || 1}</td>
+    <td style="font-size:22px;">${reliefEmoji(u.relief_level)}</td>
+  </tr>`).join('');
 }
 
-function escapeHtml(str) {
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+// ── D4: Alert settings ───────────────────────────────────
+async function loadAlertPrefs() {
+  if (!sbClient || !currentAccessCode) return;
+  try {
+    const { data } = await sbClient
+      .from('family_access')
+      .select('email, alert_on_emergency, alert_on_inactivity_days')
+      .eq('access_code', currentAccessCode)
+      .single();
+    if (data) {
+      if (data.email) document.getElementById('alert-email').value = data.email;
+      document.getElementById('alert-emergency').checked = data.alert_on_emergency || false;
+      document.getElementById('alert-inactivity').value = String(data.alert_on_inactivity_days || 0);
+    }
+  } catch (_) {}
 }
 
-// ── PDF Report ──────────────────────────────────────────
+async function saveAlertPrefs() {
+  const email = document.getElementById('alert-email').value.trim();
+  const alertEmergency = document.getElementById('alert-emergency').checked;
+  const inactivityDays = parseInt(document.getElementById('alert-inactivity').value, 10);
+  const statusEl = document.getElementById('alerts-status');
 
-async function downloadReport() {
-  if (!currentAccessCode || !sbClient) return;
+  if (!sbClient || !currentAccessCode) return;
 
   try {
-    // Fetch extended 30-day data for report
-    const { data, error } = await sbClient.rpc('get_family_report', {
-      p_access_code: currentAccessCode
-    });
+    const { error } = await sbClient
+      .from('family_access')
+      .update({ email: email || null, alert_on_emergency: alertEmergency, alert_on_inactivity_days: inactivityDays })
+      .eq('access_code', currentAccessCode);
 
-    if (error || !data || data.error) {
-      alert('Error al generar el informe. Intentalo de nuevo.');
-      return;
-    }
+    if (error) throw error;
+    statusEl.textContent = '✓ Preferencias guardadas';
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--green)';
+    setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+  } catch (e) {
+    statusEl.textContent = 'Error al guardar. Intentalo de nuevo.';
+    statusEl.style.display = 'block';
+    statusEl.style.color = 'var(--red)';
+  }
+}
 
+// ── PDF Report ───────────────────────────────────────────
+async function downloadReport() {
+  if (!currentAccessCode || !sbClient) return;
+  try {
+    const { data, error } = await sbClient.rpc('get_family_report', { p_access_code: currentAccessCode });
+    if (error || !data || data.error) { alert('Error al generar el informe. Intentalo de nuevo.'); return; }
     generatePDF(data);
   } catch (e) {
     alert('Error al generar el informe: ' + e.message);
@@ -468,7 +526,7 @@ async function downloadReport() {
 
 function generatePDF(data) {
   if (!window.jspdf && !window.jsPDF) {
-    alert('Error: la libreria de PDF no se ha cargado. Recarga la pagina e intentalo de nuevo.');
+    alert('Error: la libreria de PDF no se ha cargado. Recarga la pagina.');
     return;
   }
   const jsPDF = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
@@ -478,27 +536,19 @@ function generatePDF(data) {
   const symptoms = data.symptoms || [];
   const counts = data.classification_counts || {};
   const emergencies = data.emergencies || [];
-
+  const inhalerDetail = data.inhaler_uses_detail || [];
   const now = new Date();
-  const title = `Informe de salud - ${patient.name || 'Paciente'}`;
 
-  // Header
-  doc.setFontSize(20);
-  doc.setTextColor(21, 101, 192);
+  doc.setFontSize(20); doc.setTextColor(21, 101, 192);
   doc.text('Appbuelito', 14, 20);
-  doc.setFontSize(14);
-  doc.setTextColor(0);
-  doc.text(title, 14, 30);
-  doc.setFontSize(10);
-  doc.setTextColor(100);
+  doc.setFontSize(14); doc.setTextColor(0);
+  doc.text(`Informe de salud - ${patient.name || 'Paciente'}`, 14, 30);
+  doc.setFontSize(10); doc.setTextColor(100);
   doc.text(`Diagnostico: ${patient.diagnosis || 'EPOC'}`, 14, 37);
   doc.text(`Periodo: ultimos 30 dias | Generado: ${now.getDate()}/${now.getMonth()+1}/${now.getFullYear()}`, 14, 43);
 
-  // Summary
-  doc.setFontSize(14);
-  doc.setTextColor(0);
+  doc.setFontSize(14); doc.setTextColor(0);
   doc.text('Resumen', 14, 55);
-
   doc.autoTable({
     startY: 60,
     head: [['Metrica', 'Valor']],
@@ -511,96 +561,112 @@ function generatePDF(data) {
       ['Episodios de ahogo', String(data.episodes_count || 0)],
       ['Eventos de emergencia', String(emergencies.length)],
     ],
-    theme: 'striped',
-    styles: { fontSize: 10 },
+    theme: 'striped', styles: { fontSize: 10 },
     headStyles: { fillColor: [21, 101, 192] },
   });
 
-  // Day-by-day table
-  let y = doc.lastAutoTable.finalY + 15;
-  doc.setFontSize(14);
-  doc.text('Detalle dia a dia', 14, y);
+  // Weekly breakdown
+  if (data.weekly_breakdown && data.weekly_breakdown.length) {
+    let y = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.text('Resumen semanal', 14, y);
+    doc.autoTable({
+      startY: y + 4,
+      head: [['Semana', 'Buenos', 'Regulares', 'Malos', 'Inhalaciones']],
+      body: data.weekly_breakdown.map(w => [
+        formatDate(w.week_start.split('T')[0]),
+        String(w.green), String(w.yellow), String(w.red), String(w.inhaler_count)
+      ]),
+      theme: 'striped', styles: { fontSize: 9 },
+      headStyles: { fillColor: [21, 101, 192] },
+    });
+  }
 
-  const dayRows = flows.map(f => {
-    const morningCheck = symptoms.find(s =>
-      s.moment === 'morning' && (s.daily_flow_id === f.id || matchDate(s.created_at, f.flow_date))
-    );
-
-    const classLabel = { green: 'Bueno', yellow: 'Regular', red: 'Malo' }[f.day_classification] || '-';
-    const breathing = morningCheck && morningCheck.breathing_today != null ? scoreLabel(morningCheck.breathing_today) : '-';
-    const fatigue = morningCheck && morningCheck.fatigue != null ? scoreLabel(morningCheck.fatigue) : '-';
-    const cough = morningCheck && morningCheck.cough != null ? scoreLabel(morningCheck.cough) : '-';
-    const med = f.medication_taken === true ? 'Si' : f.medication_taken === false ? 'No' : '-';
-    const notes = f.evening_notes || '';
-
-    return [formatDate(f.flow_date), classLabel, breathing, fatigue, cough, med, notes.substring(0, 30)];
-  });
-
+  // Day-by-day
+  let y2 = doc.lastAutoTable.finalY + 10;
+  doc.setFontSize(12); doc.text('Detalle dia a dia', 14, y2);
   doc.autoTable({
-    startY: y + 5,
+    startY: y2 + 4,
     head: [['Fecha', 'Estado', 'Respiracion', 'Fatiga', 'Tos', 'Medicacion', 'Notas']],
-    body: dayRows,
-    theme: 'striped',
-    styles: { fontSize: 8 },
+    body: flows.map(f => {
+      const morningCheck = symptoms.find(s => s.moment === 'morning' && (s.daily_flow_id === f.id || matchDate(s.created_at, f.flow_date)));
+      const classLabel = { green: 'Bueno', yellow: 'Regular', red: 'Malo' }[f.day_classification] || '-';
+      return [
+        formatDate(f.flow_date), classLabel,
+        morningCheck && morningCheck.breathing_today != null ? scoreLabel(morningCheck.breathing_today) : '-',
+        morningCheck && morningCheck.fatigue != null ? scoreLabel(morningCheck.fatigue) : '-',
+        morningCheck && morningCheck.cough != null ? scoreLabel(morningCheck.cough) : '-',
+        f.medication_taken === true ? 'Si' : f.medication_taken === false ? 'No' : '-',
+        (f.evening_notes || '').substring(0, 30),
+      ];
+    }),
+    theme: 'striped', styles: { fontSize: 8 },
     headStyles: { fillColor: [21, 101, 192] },
-    columnStyles: {
-      6: { cellWidth: 35 },
-    },
+    columnStyles: { 6: { cellWidth: 35 } },
   });
+
+  // Inhaler detail
+  if (inhalerDetail.length) {
+    let y3 = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.text('Historial de inhalador', 14, y3);
+    doc.autoTable({
+      startY: y3 + 4,
+      head: [['Fecha/Hora', 'Motivo', 'Pulsaciones', 'Alivio']],
+      body: inhalerDetail.map(u => {
+        const ctxMap = { chokingFlow: 'Ahogo', routine: 'Ejercicio', symptomCheck: 'Control' };
+        const reliefLabels = { 1: 'Nada', 2: 'Poco', 3: 'Regular', 4: 'Bastante', 5: 'Mucho' };
+        return [formatDateTime(u.timestamp), ctxMap[u.usage_context] || 'Normal', String(u.puffs || 1), reliefLabels[u.relief_level] || '-'];
+      }),
+      theme: 'striped', styles: { fontSize: 9 },
+      headStyles: { fillColor: [2, 136, 209] },
+    });
+  }
 
   // Emergencies
-  if (emergencies.length > 0) {
-    y = doc.lastAutoTable.finalY + 15;
-    doc.setFontSize(14);
-    doc.setTextColor(198, 40, 40);
-    doc.text('Eventos de emergencia', 14, y);
+  if (emergencies.length) {
+    let y4 = doc.lastAutoTable.finalY + 10;
+    doc.setFontSize(12); doc.setTextColor(198, 40, 40);
+    doc.text('Eventos de emergencia', 14, y4);
     doc.setTextColor(0);
-
-    const emergRows = emergencies.map(e => [
-      formatDateTime(e.timestamp),
-      e.type,
-      e.contact_called || '-',
-      e.result || '-',
-    ]);
-
     doc.autoTable({
-      startY: y + 5,
+      startY: y4 + 4,
       head: [['Fecha/Hora', 'Tipo', 'Contacto', 'Resultado']],
-      body: emergRows,
-      theme: 'striped',
-      styles: { fontSize: 9 },
+      body: emergencies.map(e => [formatDateTime(e.timestamp), e.type, e.contact_called || '-', e.result || '-']),
+      theme: 'striped', styles: { fontSize: 9 },
       headStyles: { fillColor: [198, 40, 40] },
     });
   }
 
-  // Footer
   const pageCount = doc.internal.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
-    doc.setFontSize(8);
-    doc.setTextColor(150);
-    doc.text(
-      `Appbuelito - Informe de salud | Pagina ${i} de ${pageCount} | Esta informacion no sustituye la atencion medica profesional.`,
-      14, doc.internal.pageSize.height - 10
-    );
+    doc.setFontSize(8); doc.setTextColor(150);
+    doc.text(`Appbuelito | Pag ${i}/${pageCount} | Esta informacion no sustituye la atencion medica profesional.`,
+      14, doc.internal.pageSize.height - 10);
   }
 
-  // Download
   const filename = `appbuelito_informe_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.pdf`;
   doc.save(filename);
 }
 
 function scoreLabel(score) {
-  const labels = { 1: 'Muy bien', 2: 'Bien', 3: 'Normal', 4: 'Mal', 5: 'Muy mal' };
-  return labels[score] || String(score);
+  return { 1: 'Muy bien', 2: 'Bien', 3: 'Normal', 4: 'Mal', 5: 'Muy mal' }[score] || String(score);
 }
 
+// ── Helpers ──────────────────────────────────────────────
 function matchDate(isoStr, flowDate) {
   if (!isoStr) return false;
   return isoStr.split('T')[0] === flowDate;
 }
 
-// ── Helpers ──────────────────────────────────────────
+function scoreEmoji(score) {
+  return { 1: '😊', 2: '🙂', 3: '😐', 4: '😟', 5: '😣' }[score] || String(score);
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
 
 function formatDate(dateStr) {
   const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
@@ -616,26 +682,25 @@ function formatDateTime(isoStr) {
 }
 
 function formatTimeAgo(date) {
-  const diffMs = Date.now() - date.getTime();
-  const mins = Math.floor(diffMs / 60000);
+  const mins = Math.floor((Date.now() - date.getTime()) / 60000);
   if (mins < 60) return `hace ${mins} min`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `hace ${hours}h`;
-  const days = Math.floor(hours / 24);
-  return `hace ${days} dia${days > 1 ? 's' : ''}`;
+  return `hace ${Math.floor(hours / 24)} dia${Math.floor(hours/24) > 1 ? 's' : ''}`;
 }
 
-// Logout
 function logout() {
   sessionStorage.removeItem('access_code');
   currentAccessCode = null;
   dashboardData = null;
+  if (chartSymptoms) { chartSymptoms.destroy(); chartSymptoms = null; }
+  if (chartDays) { chartDays.destroy(); chartDays = null; }
+  if (chartInhaler) { chartInhaler.destroy(); chartInhaler = null; }
   document.getElementById('dashboard-screen').style.display = 'none';
   document.getElementById('login-screen').style.display = 'block';
   document.getElementById('access-code').value = '';
 }
 
-// On page load
 document.addEventListener('DOMContentLoaded', () => {
   checkUrlCode();
   const savedCode = sessionStorage.getItem('access_code');

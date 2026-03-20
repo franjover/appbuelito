@@ -20,12 +20,6 @@ class EmergencyContactsScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Contactos de emergencia'),
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'add_contact',
-        backgroundColor: AppColors.primary,
-        onPressed: () => _showContactDialog(context, ref),
-        child: const Icon(Icons.add, size: 28),
-      ),
       body: contactsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(child: Text('Error: $e')),
@@ -72,8 +66,16 @@ class EmergencyContactsScreen extends ConsumerWidget {
               ),
               Expanded(
                 child: ReorderableListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                   itemCount: contacts.length,
+                  footer: Padding(
+                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 16),
+                    child: LargeButton(
+                      text: 'Anadir contacto',
+                      icon: Icons.person_add,
+                      onPressed: () => _showContactDialog(context, ref),
+                    ),
+                  ),
                   onReorder: (oldIndex, newIndex) async {
                     if (newIndex > oldIndex) newIndex--;
                     final reordered = List<EmergencyContact>.from(contacts);

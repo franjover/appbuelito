@@ -204,6 +204,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             onTap: () => context.pushNamed(RouteNames.emergency),
           ),
 
+          LargeCard(
+            title: 'Ver tendencias',
+            subtitle: 'Graficas de los ultimos 14 dias',
+            leadingIcon: Icons.trending_up,
+            trailing: const Icon(Icons.chevron_right, size: 28),
+            onTap: () => context.pushNamed(RouteNames.trends),
+          ),
+
           const SizedBox(height: 16),
 
           // Sync status

@@ -20,6 +20,7 @@ import '../screens/settings/edit_profile_screen.dart';
 import '../screens/settings/family_access_screen.dart';
 import '../screens/report/report_screen.dart';
 import '../screens/trends/trends_screen.dart';
+import '../screens/inhaler/inhaler_history_screen.dart';
 import '../../core/widgets/choking_fab.dart';
 
 /// Shell wrapper that adds the "Me ahogo" FAB to all main screens.
@@ -105,6 +106,13 @@ GoRouter createAppRouter() {
                 path: 'inhaler',
                 name: RouteNames.inhalerRegistry,
                 builder: (context, state) => const InhalerRegistryScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'history',
+                    name: RouteNames.inhalerHistory,
+                    builder: (context, state) => const InhalerHistoryScreen(),
+                  ),
+                ],
               ),
               GoRoute(
                 path: 'block/:blockId',

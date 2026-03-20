@@ -95,6 +95,31 @@
         </div>
       </div>
 
+      <!-- D2: Weekly comparison -->
+      <div class="card" id="weekly-comparison-card" style="display:none;">
+        <h2>📊 Esta semana vs semana anterior</h2>
+        <div id="weekly-comparison-grid" class="weekly-grid"></div>
+      </div>
+
+      <!-- D1: Charts section -->
+      <div class="card" id="charts-card" style="display:none;">
+        <h2>📈 Tendencias (14 dias)</h2>
+        <div class="charts-container">
+          <div class="chart-wrap">
+            <h3>Sintomas diarios</h3>
+            <canvas id="chart-symptoms" height="160"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <h3>Clasificacion de dias</h3>
+            <canvas id="chart-days" height="160"></canvas>
+          </div>
+          <div class="chart-wrap">
+            <h3>Inhalador por dia</h3>
+            <canvas id="chart-inhaler" height="160"></canvas>
+          </div>
+        </div>
+      </div>
+
       <!-- Day-by-day table -->
       <div class="card table-card">
         <h2>Dia a dia</h2>
@@ -118,6 +143,54 @@
         <p id="no-data" style="display:none;" class="no-data">No hay datos disponibles todavia.</p>
       </div>
 
+      <!-- D3: Inhaler history detail -->
+      <div class="card" id="inhaler-history-card" style="display:none;">
+        <h2>💨 Historial de inhalador (14 dias)</h2>
+        <div class="table-scroll">
+          <table id="inhaler-table">
+            <thead>
+              <tr>
+                <th>Fecha/Hora</th>
+                <th>Motivo</th>
+                <th>Pulsaciones</th>
+                <th>Alivio</th>
+              </tr>
+            </thead>
+            <tbody id="inhaler-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- D4: Alert settings -->
+      <div class="card" id="alerts-card">
+        <h2>🔔 Mis alertas</h2>
+        <p class="alerts-description">Configura cuando quieres recibir una notificacion por email.</p>
+        <div class="alerts-form">
+          <label for="alert-email">Tu email:</label>
+          <input type="email" id="alert-email" placeholder="tu@email.com">
+
+          <div class="alert-toggle-row">
+            <label>
+              <input type="checkbox" id="alert-emergency">
+              Avisarme si hay una emergencia
+            </label>
+          </div>
+
+          <div class="alert-select-row">
+            <label for="alert-inactivity">Avisarme si no hay datos en:</label>
+            <select id="alert-inactivity">
+              <option value="0">No avisar</option>
+              <option value="1">1 dia</option>
+              <option value="2">2 dias</option>
+              <option value="3">3 dias</option>
+            </select>
+          </div>
+
+          <button class="save-alerts-btn" onclick="saveAlertPrefs()">Guardar preferencias</button>
+          <p id="alerts-status" class="alerts-status" style="display:none;"></p>
+        </div>
+      </div>
+
       <!-- Footer -->
       <footer>
         <p>Generado por Appbuelito</p>
@@ -127,6 +200,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
   <script src="https://unpkg.com/jspdf@2.5.2/dist/jspdf.umd.min.js"></script>
   <script src="https://unpkg.com/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="config.js"></script>

@@ -23,6 +23,7 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
   bool _inMicroSession = false;
   bool _showFeedback = false;
   bool _inhalerUsed = false;
+  bool _inhalerSaved = false;
   late AnimationController _breathController;
   late Animation<double> _breathAnimation;
   Timer? _sessionTimer;
@@ -52,6 +53,20 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
     super.dispose();
   }
 
+  Future<void> _registerInhalerUse() async {
+    if (_inhalerSaved) return;
+    final db = ref.read(databaseProvider);
+    final flow = ref.read(currentFlowProvider).value;
+    await db.inhalerDao.insertUse(
+      RescueInhalerUsesCompanion.insert(
+        timestamp: DateTime.now(),
+        usageContext: 'chokingFlow',
+        dailyFlowId: Value(flow?.id),
+      ),
+    );
+    setState(() => _inhalerSaved = true);
+  }
+
   Future<void> _saveEpisode(String improvement) async {
     final db = ref.read(databaseProvider);
     final flow = ref.read(currentFlowProvider).value;
@@ -66,15 +81,9 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
       ),
     );
 
-    // Save inhaler use if used
-    if (_inhalerUsed) {
-      await db.inhalerDao.insertUse(
-        RescueInhalerUsesCompanion.insert(
-          timestamp: DateTime.now(),
-          usageContext: 'chokingFlow',
-          dailyFlowId: Value(flow?.id),
-        ),
-      );
+    // Save inhaler use only if not already saved
+    if (_inhalerUsed && !_inhalerSaved) {
+      await _registerInhalerUse();
     }
   }
 
@@ -238,6 +247,11 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
+          'Sesion $_microSessionCount completada',
+          style: const TextStyle(color: Colors.white54, fontSize: 16),
+        ),
+        const SizedBox(height: 8),
+        Text(
           'Mejoras?',
           style: Theme.of(context).textTheme.displayMedium?.copyWith(
                 color: Colors.white,
@@ -250,7 +264,17 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
           variant: LargeButtonVariant.success,
           onPressed: () async {
             await _saveEpisode('improved');
-            if (mounted) context.pop();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    'Bien hecho. Mejoraste tras $_microSessionCount sesion${_microSessionCount == 1 ? '' : 'es'}.',
+                  ),
+                  backgroundColor: Colors.green.shade700,
+                ),
+              );
+              context.pop();
+            }
           },
         ),
         const SizedBox(height: 12),
@@ -271,6 +295,7 @@ class _ChokingFlowScreenState extends ConsumerState<ChokingFlowScreen>
               ? null
               : () {
                   setState(() => _inhalerUsed = true);
+                  _registerInhalerUse();
                 },
         ),
         const SizedBox(height: 12),

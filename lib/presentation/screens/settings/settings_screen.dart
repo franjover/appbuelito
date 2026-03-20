@@ -6,12 +6,53 @@ import '../../../core/widgets/large_card.dart';
 import '../../providers/app_providers.dart';
 import '../../router/route_names.dart';
 
-class SettingsScreen extends ConsumerWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
+  String _fmt(int h, int m) =>
+      '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
+
+  Future<void> _pickMorningTime() async {
+    final prefs = ref.read(appPreferencesProvider);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+          hour: prefs.morningNotifHour, minute: prefs.morningNotifMinute),
+      helpText: 'Recordatorio de manana',
+    );
+    if (picked == null) return;
+    await prefs.setMorningNotif(picked.hour, picked.minute);
+    final notif = ref.read(notificationServiceProvider);
+    await notif.scheduleMorningNotification(
+        hour: picked.hour, minute: picked.minute);
+    setState(() {});
+  }
+
+  Future<void> _pickEveningTime() async {
+    final prefs = ref.read(appPreferencesProvider);
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(
+          hour: prefs.eveningNotifHour, minute: prefs.eveningNotifMinute),
+      helpText: 'Recordatorio de tarde',
+    );
+    if (picked == null) return;
+    await prefs.setEveningNotif(picked.hour, picked.minute);
+    final notif = ref.read(notificationServiceProvider);
+    await notif.scheduleEveningReminder(
+        hour: picked.hour, minute: picked.minute);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
+    final prefs = ref.watch(appPreferencesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Perfil y ajustes')),
@@ -72,6 +113,49 @@ class SettingsScreen extends ConsumerWidget {
               leadingIcon: Icons.family_restroom,
               trailing: const Icon(Icons.chevron_right, size: 28),
               onTap: () => context.pushNamed(RouteNames.familyAccess),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Notification schedule card
+            LargeCard(
+              leadingIcon: Icons.notifications_active,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Recordatorios',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.wb_sunny_outlined,
+                        color: AppColors.primary),
+                    title: const Text('Recordatorio de manana'),
+                    subtitle: Text(
+                      _fmt(prefs.morningNotifHour, prefs.morningNotifMinute),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _pickMorningTime,
+                  ),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading:
+                        const Icon(Icons.nights_stay, color: AppColors.primary),
+                    title: const Text('Recordatorio de tarde'),
+                    subtitle: Text(
+                      _fmt(prefs.eveningNotifHour, prefs.eveningNotifMinute),
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _pickEveningTime,
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 24),

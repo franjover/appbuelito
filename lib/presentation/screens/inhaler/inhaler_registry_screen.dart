@@ -1,11 +1,13 @@
 import 'package:drift/drift.dart' hide Column;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/likert_scale.dart';
 import '../../../data/local/database/app_database.dart';
 import '../../providers/app_providers.dart';
+import '../../router/route_names.dart';
 
 class InhalerRegistryScreen extends ConsumerStatefulWidget {
   const InhalerRegistryScreen({super.key});
@@ -59,7 +61,17 @@ class _InhalerRegistryScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Registrar inhalador')),
+      appBar: AppBar(
+        title: const Text('Registrar inhalador'),
+        actions: [
+          TextButton.icon(
+            onPressed: () => context.pushNamed(RouteNames.inhalerHistory),
+            icon: const Icon(Icons.history, color: Colors.white70),
+            label: const Text('Historial',
+                style: TextStyle(color: Colors.white70, fontSize: 16)),
+          ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(

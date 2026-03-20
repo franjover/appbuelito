@@ -42,12 +42,12 @@ class NotificationService {
     }
   }
 
-  /// Schedule the morning notification at 8:00 AM.
-  Future<void> scheduleMorningNotification() async {
+  /// Schedule the morning notification at the given time (default 8:00).
+  Future<void> scheduleMorningNotification({int hour = 8, int minute = 0}) async {
     await _scheduleDaily(
       id: AppConstants.morningNotificationId,
-      hour: AppConstants.dailyResetHour,
-      minute: 0,
+      hour: hour,
+      minute: minute,
       title: 'Buenos dias',
       body: 'Vamos a preparar todo para empezar el dia.',
     );
@@ -72,15 +72,26 @@ class NotificationService {
     );
   }
 
-  /// Schedule the evening questionnaire reminder.
-  Future<void> scheduleEveningReminder() async {
+  /// Schedule the evening questionnaire reminder at the given time (default 20:30).
+  Future<void> scheduleEveningReminder({int hour = 20, int minute = 30}) async {
     await _scheduleDaily(
       id: AppConstants.eveningQuestionnaireReminderId,
-      hour: 20,
-      minute: 30,
+      hour: hour,
+      minute: minute,
       title: 'Cierre del dia',
       body: 'Vamos a hacer el cuestionario del final del dia.',
     );
+  }
+
+  /// Reschedule morning and evening notifications with new times.
+  Future<void> reschedule({
+    required int morningHour,
+    required int morningMinute,
+    required int eveningHour,
+    required int eveningMinute,
+  }) async {
+    await scheduleMorningNotification(hour: morningHour, minute: morningMinute);
+    await scheduleEveningReminder(hour: eveningHour, minute: eveningMinute);
   }
 
   /// Cancel a specific notification.

@@ -55,12 +55,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       }
 
       // Background cloud sync (non-blocking, fire-and-forget)
-      try {
-        final syncService = ref.read(syncServiceProvider);
-        syncService?.syncAll();
-      } catch (_) {
-        // Sync failed — will retry next time
-      }
+      final syncService = ref.read(syncServiceProvider);
+      syncService?.syncAll().catchError((_) => null);
 
       // Check for app updates
       if (mounted) {

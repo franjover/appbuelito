@@ -20,15 +20,16 @@ class SyncService {
     // Prevent concurrent sync calls
     if (_isSyncing) return SyncStatus.idle;
     _isSyncing = true;
-    // Check connectivity
-    final connectivity = await Connectivity().checkConnectivity();
-    if (connectivity.contains(ConnectivityResult.none)) {
-      return SyncStatus.offline;
-    }
-
-    if (!_prefs.cloudSyncEnabled) return SyncStatus.idle;
 
     try {
+      // Check connectivity
+      final connectivity = await Connectivity().checkConnectivity();
+      if (connectivity.contains(ConnectivityResult.none)) {
+        return SyncStatus.offline;
+      }
+
+      if (!_prefs.cloudSyncEnabled) return SyncStatus.idle;
+
       // Ensure patient is registered (skip upsert if already registered)
       final existingId = _prefs.cloudPatientId;
       if (existingId == null) {

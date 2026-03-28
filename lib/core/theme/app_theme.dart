@@ -193,6 +193,38 @@ class AppTheme {
         largeSizeConstraints: BoxConstraints.tightFor(width: 72, height: 72),
       ),
 
+      // Global icon theme (applies to all Icon widgets by default)
+      iconTheme: const IconThemeData(
+        color: AppColors.primary,
+        size: 24,
+      ),
+
+      // M3 NavigationBar (used in app_router.dart via NavigationDestination)
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: AppColors.surface,
+        elevation: 8,
+        indicatorColor: AppColors.primaryLight.withValues(alpha: 0.2),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: AppColors.primary, size: 26);
+          }
+          return const IconThemeData(color: AppColors.textSecondary, size: 26);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary,
+            );
+          }
+          return const TextStyle(
+            fontSize: 13,
+            color: AppColors.textSecondary,
+          );
+        }),
+      ),
+
       // Divider
       dividerTheme: const DividerThemeData(
         color: AppColors.divider,

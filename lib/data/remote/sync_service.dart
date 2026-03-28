@@ -13,6 +13,9 @@ class SyncService {
   final AppPreferences _prefs;
   bool _isSyncing = false;
 
+  /// Last error message from syncAll(), exposed for UI debugging.
+  String? lastError;
+
   SyncService(this._supabase, this._db, this._prefs);
 
   /// Sync all pending data to Supabase.
@@ -51,8 +54,9 @@ class SyncService {
       await _prefs.setLastSyncAt(DateTime.now());
 
       return SyncStatus.success;
-    } catch (e) {
-      print('[SyncService] syncAll error: $e');
+    } catch (e, st) {
+      lastError = '$e\n$st';
+      print('[SyncService] syncAll error: $e\n$st');
       return SyncStatus.error;
     } finally {
       _isSyncing = false;

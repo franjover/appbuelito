@@ -86,20 +86,56 @@ class _FamilyAccessScreenState extends ConsumerState<FamilyAccessScreen> {
     try {
       final result = await syncService.syncAll();
       if (mounted) {
-        final msg = switch (result) {
-          SyncStatus.success => 'Datos sincronizados correctamente',
-          SyncStatus.offline => 'Sin conexion a internet',
-          SyncStatus.error => 'Error al sincronizar',
-          _ => 'Sincronizacion completada',
-        };
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(msg)),
-        );
+        if (result == SyncStatus.error) {
+          final detail = syncService.lastError ?? 'Error desconocido';
+          showDialog(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              title: const Text('Error de sincronizacion'),
+              content: SingleChildScrollView(
+                child: SelectableText(
+                  detail,
+                  style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cerrar'),
+                ),
+              ],
+            ),
+          );
+        } else {
+          final msg = switch (result) {
+            SyncStatus.success => 'Datos sincronizados correctamente',
+            SyncStatus.offline => 'Sin conexion a internet',
+            _ => 'Sincronizacion completada',
+          };
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg)),
+          );
+        }
       }
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error al sincronizar')),
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Error inesperado'),
+            content: SingleChildScrollView(
+              child: SelectableText(
+                '$e',
+                style: const TextStyle(fontSize: 12, fontFamily: 'monospace'),
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('Cerrar'),
+              ),
+            ],
+          ),
         );
       }
     } finally {
